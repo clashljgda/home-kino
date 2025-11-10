@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rutracker Film Search</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .search-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        input, select, button { padding: 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #2c3e50; color: white; cursor: pointer; }
+        .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .film-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .film-card h3 { margin-top: 0; color: #2c3e50; }
+        .film-info { font-size: 14px; color: #666; margin: 5px 0; }
+        .download-btn { display: block; background: #e74c3c; color: white; text-align: center; padding: 10px; text-decoration: none; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Название фильма...">
+            <select id="genreSelect">
+                <option value="">Все жанры</option>
+                <option value="боевик">Боевик</option>
+                <option value="комедия">Комедия</option>
+                <option value="драма">Драма</option>
+                <option value="фантастика">Фантастика</option>
+                <option value="ужасы">Ужасы</option>
+            </select>
+            <select id="sortSelect">
+                <option value="popular">По популярности</option>
+                <option value="rating">По рейтингу</option>
+                <option value="new">По дате</option>
+            </select>
+            <button onclick="searchFilms()">Поиск</button>
+            <button onclick="getPopularFilms()" style="background: #27ae60;">Новые популярные</button>
+        </div>
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        const CORS_PROXY = "https://cors-anywhere.herokuapp.com/";
+        
+        async function searchFilms() {
+            const query = document.getElementById('searchInput').value;
+            const genre = document.getElementById('genreSelect').value;
+            const sort = document.getElementById('sortSelect').value;
+            
+            const results = await parseRutracker(query, genre, sort);
+            displayResults(results);
+        }
+
+        async function getPopularFilms() {
+            const results = await parseRutracker('', '', 'popular');
+            displayResults(results.slice(0, 30));
+        }
+
+        async function parseRutracker(query = '', genre = '', sort = 'popular') {
+            // Эмуляция парсинга Rutracker
+            const mockResults = [
+                {
+                    title: "Оппенгеймер (2023) BDRip | Дубляж",
+                    genre: "драма",
+                    rating: 8.5,
+                    duration: "180 мин",
+                    size: "2.4 GB",
+                    seeds: 1542,
+                    download: "https://rutracker.org/forum/viewtopic.php?t=1234567",
+                    date: "2024-01-15"
+                },
+                {
+                    title: "Джон Уик 4 (2023) 4K | Русская озвучка",
+                    genre: "боевик", 
+                    rating: 7.8,
+                    duration: "169 мин",
+                    size: "15.8 GB",
+                    seeds: 2891,
+                    download: "https://rutracker.org/forum/viewtopic.php?t=1234568",
+                    date: "2024-01-10"
+                },
+                {
+                    title: "Барби (2023) WEB-DL | Дубляж",
+                    genre: "комедия",
+                    rating: 6.9,
+                    duration: "114 мин",
+                    size: "4.7 GB", 
+                    seeds: 4321,
+                    download: "https://rutracker.org/forum/viewtopic.php?t=1234569",
+                    date: "2024-01-12"
+                }
+            ];
+
+            // Фильтрация по жанру и запросу
+            let filtered = mockResults.filter(film => {
+                const matchesGenre = !genre || film.genre === genre;
+                const matchesQuery = !query || film.title.toLowerCase().includes(query.toLowerCase());
+                return matchesGenre && matchesQuery;
+            });
+
+            // Сортировка
+            if(sort === 'rating') filtered.sort((a,b) => b.rating - a.rating);
+            else if(sort === 'new') filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+            else filtered.sort((a,b) => b.seeds - a.seeds); // по популярности
+
+            return filtered;
+        }
+
+        function displayResults(films) {
+            const container = document.getElementById('results');
+            container.innerHTML = '';
+
+            films.forEach(film => {
+                const card = document.createElement('div');
+                card.className = 'film-card';
+                card.innerHTML = `
+                    <h3>${film.title}</h3>
+                    <div class="film-info">Жанр: ${film.genre}</div>
+                    <div class="film-info">Рейтинг: ${film.rating}/10</div>
+                    <div class="film-info">Длительность: ${film.duration}</div>
+                    <div class="film-info">Размер: ${film.size} | Сиды: ${film.seeds}</div>
+                    <a href="${film.download}" class="download-btn" target="_blank">Скачать торрент</a>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Загружаем популярные фильмы при старте
+        getPopularFilms();
+    </script>
+</body>
+</html>
