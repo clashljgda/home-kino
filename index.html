@@ -1,0 +1,542 @@
+import React, { useState, useMemo } from 'react';
+import { Fish, Calendar, Book, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Mock data for fish species
+const fishSpecies = [
+  {
+    id: 1,
+    name: 'Щука',
+    bestTime: 'Раннее утро и вечер, особенно в пасмурные дни',
+    bait: 'Воблеры, вертушки, живец (плотва, карась)',
+    tackle: 'Спиннинг среднего строя, плетеный шнур 0.2-0.25 мм',
+    image: 'https://placehold.co/300x200/3b82f6/ffffff?text=Щука'
+  },
+  {
+    id: 2,
+    name: 'Окунь',
+    bestTime: 'Вторая половина дня, особенно после обеда',
+    bait: 'Мелкие воблеры, силиконовые приманки, мормышка',
+    tackle: 'Ультралайтовый спиннинг, монофильная леска 0.15-0.2 мм',
+    image: 'https://placehold.co/300x200/10b981/ffffff?text=Окунь'
+  },
+  {
+    id: 3,
+    name: 'Судак',
+    bestTime: 'Рассвет и закат, активность усиливается перед грозой',
+    bait: 'Джиг-приманки, виброхвосты, колеблющиеся блесны',
+    tackle: 'Спиннинг быстрого строя, плетенка 0.22-0.28 мм',
+    image: 'https://placehold.co/300x200/8b5cf6/ffffff?text=Судак'
+  },
+  {
+    id: 4,
+    name: 'Карп',
+    bestTime: 'Ночь и раннее утро в теплую погоду',
+    bait: 'Бойлы, кукуруза, перловка, макушка',
+    tackle: 'Фидер или карповое удилище, плетенка 0.3-0.4 мм',
+    image: 'https://placehold.co/300x200/f59e0b/ffffff?text=Карп'
+  },
+  {
+    id: 5,
+    name: 'Лещ',
+    bestTime: 'Вечер и ночь, особенно в полнолуние',
+    bait: 'Пареный горох, перловка, мотыль, опарыш',
+    tackle: 'Фидерное удилище, монофильная леска 0.25-0.35 мм',
+    image: 'https://placehold.co/300x200/ef4444/ffffff?text=Лещ'
+  },
+  {
+    id: 6,
+    name: 'Налим',
+    bestTime: 'Ночь в холодное время года (октябрь-март)',
+    bait: 'Мелкая живца, кусочки рыбы, рак',
+    tackle: 'Жесткое донное удилище, плетенка 0.35-0.45 мм',
+    image: 'https://placehold.co/300x200/6b7280/ffffff?text=Налим'
+  }
+];
+
+// Mock data for fishing knots
+const fishingKnots = [
+  {
+    id: 1,
+    name: 'Клинч (Improved Clinch Knot)',
+    description: 'Универсальный узел для привязывания крючков и приманок к леске. Надежен при использовании монофильной лески.',
+    steps: [
+      'Пропустите конец лески через ушко крючка',
+      'Сделайте 5-7 оборотов вокруг основной лески',
+      'Пропустите конец лески в петлю у ушка',
+      'Затяните узел, смочив леску водой'
+    ],
+    image: 'https://placehold.co/250x150/3b82f6/ffffff?text=Клинч'
+  },
+  {
+    id: 2,
+    name: 'Петля (Loop Knot)',
+    description: 'Создает свободно двигающуюся петлю для приманок, улучшая их игру. Идеален для воблеров и мягких приманок.',
+    steps: [
+      'Сложите леску вдвое',
+      'Сделайте 6-8 оборотов вокруг двойной лески',
+      'Пропустите конец лески в образовавшуюся петлю',
+      'Аккуратно затяните, оставив петлю нужного размера'
+    ],
+    image: 'https://placehold.co/250x150/10b981/ffffff?text=Петля'
+  },
+  {
+    id: 3,
+    name: 'Штыковой (Palomar Knot)',
+    description: 'Один из самых прочных узлов для привязывания крючков и вертлюжков. Легко вяжется даже в темноте.',
+    steps: [
+      'Сложите леску вдвое',
+      'Пропустите петлю через ушко крючка',
+      'Завяжите простой узел поверх ушка',
+      'Пропустите крючок в петлю и затяните'
+    ],
+    image: 'https://placehold.co/250x150/8b5cf6/ffffff?text=Штыковой'
+  }
+];
+
+// Generate 14-day forecast data
+const generateForecast = () => {
+  const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  const startDate = new Date(2026, 0, 21); // January 21, 2026
+  const forecast = [];
+  
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    
+    // Mock best fishing times (morning, day, evening, night)
+    const bestTimes = [];
+    const rand = Math.random();
+    if (rand < 0.3) bestTimes.push('Утро (5:00-9:00)');
+    if (rand > 0.2 && rand < 0.6) bestTimes.push('День (12:00-15:00)');
+    if (rand > 0.5) bestTimes.push('Вечер (18:00-21:00)');
+    if (rand > 0.7) bestTimes.push('Ночь (22:00-2:00)');
+    
+    forecast.push({
+      id: i,
+      date: `${day} ${month}`,
+      dayOfWeek: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'][date.getDay()],
+      bestTimes: bestTimes.length ? bestTimes : ['Утро (5:00-9:00)', 'Вечер (18:00-21:00)'],
+      rating: Math.floor(Math.random() * 3) + 2, // 2-4 stars
+      isWeekend
+    });
+  }
+  
+  return forecast;
+};
+
+// Fishing tips data
+const fishingTips = [
+  {
+    id: 1,
+    title: 'Выбор времени',
+    content: 'Лучшее время для рыбалки — рассвет и закат. В жаркие дни рыба активнее клюет ночью или в прохладные утренние часы. Перед грозой клев часто усиливается.'
+  },
+  {
+    id: 2,
+    title: 'Прикормка',
+    content: 'Используйте прикормку за 1-2 часа до начала рыбалки. Для мирной рыбы — каши и макуха, для хищника — мелкая рыбка. Не перекармливайте рыбу!'
+  },
+  {
+    id: 3,
+    title: 'Снасти',
+    content: 'Подбирайте снасти под конкретную рыбу и условия. Для рек с течением используйте более тяжелые грузила. В стоячей воде применяйте чувствительные поплавки.'
+  },
+  {
+    id: 4,
+    title: 'Поведение',
+    content: 'Избегайте шума и резких движений. Рыба чувствительна к вибрациям и тени. Маскируйтесь с помощью природного окружения или специальных костюмов.'
+  }
+];
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('fish');
+  const [expandedFish, setExpandedFish] = useState(null);
+  const [expandedKnot, setExpandedKnot] = useState(null);
+  const [expandedTip, setExpandedTip] = useState(null);
+  
+  const forecastData = useMemo(generateForecast, []);
+  
+  // Get today's best fishing times
+  const todayForecast = forecastData[0];
+  const bestTimesToday = todayForecast.bestTimes.join(', ');
+
+  const TabContent = ({ children }) => (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+        className="w-full"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-blue-600 to-emerald-700 text-white p-4 shadow-lg">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Fish className="w-8 h-8" />
+            <h1 className="text-xl md:text-2xl font-bold">Рыбалка РФ</h1>
+          </div>
+          <div className="text-right">
+            <p className="text-sm opacity-90">21 января 2026</p>
+            <p className="font-medium mt-1">Лучшее время сегодня: <span className="bg-white/20 px-2 py-1 rounded">{bestTimesToday}</span></p>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto p-4">
+        {/* Main content */}
+        <main className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+          {/* Tab navigation */}
+          <div className="flex border-b border-gray-200">
+            <button
+              className={`flex-1 py-4 font-medium transition-all flex flex-col items-center ${
+                activeTab === 'fish' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setActiveTab('fish')}
+            >
+              <Fish className="w-5 h-5 mb-1" />
+              <span>Рыбы</span>
+            </button>
+            <button
+              className={`flex-1 py-4 font-medium transition-all flex flex-col items-center ${
+                activeTab === 'forecast' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setActiveTab('forecast')}
+            >
+              <Calendar className="w-5 h-5 mb-1" />
+              <span>Прогноз</span>
+            </button>
+            <button
+              className={`flex-1 py-4 font-medium transition-all flex flex-col items-center ${
+                activeTab === 'guide' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setActiveTab('guide')}
+            >
+              <Book className="w-5 h-5 mb-1" />
+              <span>Справочник</span>
+            </button>
+          </div>
+
+          <div className="p-4">
+            {/* Fish Directory Tab */}
+            {activeTab === 'fish' && (
+              <TabContent>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <Fish className="w-6 h-6 text-blue-500 mr-2" />
+                  Каталог рыб России
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {fishSpecies.map((fish) => (
+                    <motion.div
+                      key={fish.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: fish.id * 0.1 }}
+                      className={`border rounded-xl overflow-hidden shadow-md transition-all ${
+                        expandedFish === fish.id ? 'ring-2 ring-blue-400' : ''
+                      }`}
+                    >
+                      <div className="flex flex-col md:flex-row">
+                        <div className="md:w-48 h-48 flex-shrink-0">
+                          <img 
+                            src={fish.image} 
+                            alt={fish.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="p-4 flex flex-col flex-1">
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-xl font-bold text-gray-800">{fish.name}</h3>
+                            <button
+                              onClick={() => setExpandedFish(expandedFish === fish.id ? null : fish.id)}
+                              className="p-1 rounded-full hover:bg-blue-100 transition-colors"
+                            >
+                              {expandedFish === fish.id ? (
+                                <ChevronUp className="w-5 h-5 text-blue-600" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 text-gray-500" />
+                              )}
+                            </button>
+                          </div>
+                          
+                          <div className="mt-2 space-y-2">
+                            <div>
+                              <span className="font-medium text-gray-700">Лучшее время:</span> 
+                              <p className="text-gray-600">{fish.bestTime}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Прикормка:</span> 
+                              <p className="text-gray-600">{fish.bait}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Снасти:</span> 
+                              <p className="text-gray-600">{fish.tackle}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </TabContent>
+            )}
+
+            {/* Forecast Tab */}
+            {activeTab === 'forecast' && (
+              <TabContent>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <Calendar className="w-6 h-6 text-blue-500 mr-2" />
+                  Прогноз клева на 2 недели
+                </h2>
+                
+                <div className="space-y-3">
+                  {forecastData.map((day) => (
+                    <motion.div
+                      key={day.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: day.id * 0.05 }}
+                      className={`rounded-xl p-4 border ${
+                        day.isWeekend 
+                          ? 'bg-amber-50 border-amber-200' 
+                          : 'bg-blue-50 border-blue-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-baseline space-x-2">
+                            <span className="text-lg font-bold text-gray-800">{day.date}</span>
+                            <span className="text-gray-500">({day.dayOfWeek})</span>
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {day.bestTimes.map((time, index) => (
+                              <span 
+                                key={index} 
+                                className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full"
+                              >
+                                {time}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          {[...Array(4)].map((_, i) => (
+                            <svg 
+                              key={i} 
+                              className={`w-5 h-5 ${
+                                i < day.rating ? 'text-yellow-400' : 'text-gray-300'
+                              }`}
+                              fill="currentColor" 
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="flex items-start">
+                    <Info className="w-6 h-6 text-blue-500 mt-1 flex-shrink-0" />
+                    <div className="ml-3">
+                      <h3 className="font-bold text-gray-800">Как читать прогноз</h3>
+                      <p className="text-gray-600 mt-1">
+                        Прогноз основан на лунных циклах, времени суток и сезонных особенностях. Звезды указывают на интенсивность клева: 
+                        <span className="font-medium text-green-600 ml-1">★★★★</span> — отличный клев, 
+                        <span className="font-medium text-yellow-600 ml-1">★★★</span> — хороший, 
+                        <span className="font-medium text-orange-500 ml-1">★★</span> — умеренный, 
+                        <span className="font-medium text-red-500 ml-1">★</span> — слабый.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TabContent>
+            )}
+
+            {/* Guide Tab */}
+            {activeTab === 'guide' && (
+              <TabContent>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <Book className="w-6 h-6 text-blue-500 mr-2" />
+                  Справочник рыбака
+                </h2>
+                
+                {/* Tips Section */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <Info className="w-5 h-5 text-amber-500 mr-2" />
+                    Полезные советы
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {fishingTips.map((tip) => (
+                      <motion.div
+                        key={tip.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: tip.id * 0.1 }}
+                        className="border rounded-xl p-4 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-bold text-lg text-gray-800">{tip.title}</h4>
+                          <button
+                            onClick={() => setExpandedTip(expandedTip === tip.id ? null : tip.id)}
+                            className="p-1 text-blue-600 hover:bg-blue-100 rounded-full"
+                          >
+                            {expandedTip === tip.id ? (
+                              <ChevronUp className="w-5 h-5" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                        
+                        {expandedTip === tip.id && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            transition={{ duration: 0.3 }}
+                            className="mt-3 text-gray-600 leading-relaxed"
+                          >
+                            {tip.content}
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Knots Section */}
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <Book className="w-5 h-5 text-purple-500 mr-2" />
+                    Рыбацкие узлы
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {fishingKnots.map((knot) => (
+                      <motion.div
+                        key={knot.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: knot.id * 0.1 }}
+                        className={`border rounded-xl overflow-hidden shadow-sm ${
+                          expandedKnot === knot.id ? 'ring-2 ring-purple-400' : ''
+                        }`}
+                      >
+                        <div className="flex flex-col md:flex-row">
+                          <div className="md:w-40 h-40 flex-shrink-0 bg-purple-50 flex items-center justify-center">
+                            <img 
+                              src={knot.image} 
+                              alt={knot.name} 
+                              className="w-full h-full object-contain p-2"
+                            />
+                          </div>
+                          <div className="p-4 flex flex-col flex-1">
+                            <div className="flex justify-between items-start">
+                              <h4 className="font-bold text-lg text-gray-800">{knot.name}</h4>
+                              <button
+                                onClick={() => setExpandedKnot(expandedKnot === knot.id ? null : knot.id)}
+                                className="p-1 rounded-full hover:bg-purple-100 transition-colors"
+                              >
+                                {expandedKnot === knot.id ? (
+                                  <ChevronUp className="w-5 h-5 text-purple-600" />
+                                ) : (
+                                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                                )}
+                              </button>
+                            </div>
+                            
+                            {expandedKnot === knot.id && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.3 }}
+                                className="mt-3"
+                              >
+                                <p className="text-gray-600 mb-3">{knot.description}</p>
+                                <h5 className="font-medium text-gray-700 mb-2">Как вязать:</h5>
+                                <ol className="list-decimal list-inside space-y-1 text-gray-600 pl-2">
+                                  {knot.steps.map((step, index) => (
+                                    <li key={index}>{step}</li>
+                                  ))}
+                                </ol>
+                              </motion.div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </TabContent>
+            )}
+          </div>
+        </main>
+        
+        {/* Footer */}
+        <footer className="text-center text-gray-500 text-sm py-4">
+          <p>Рыбалка РФ — ваш надежный помощник на рыбалке</p>
+          <p className="mt-1">Данные носят информационный характер. Успешная рыбалка зависит от множества факторов.</p>
+        </footer>
+      </div>
+
+      {/* Bottom Navigation for mobile */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden">
+        <div className="flex justify-around py-2">
+          <button
+            className={`flex flex-col items-center p-2 ${
+              activeTab === 'fish' ? 'text-blue-600' : 'text-gray-500'
+            }`}
+            onClick={() => setActiveTab('fish')}
+          >
+            <Fish className="w-6 h-6" />
+            <span className="text-xs mt-1">Рыбы</span>
+          </button>
+          <button
+            className={`flex flex-col items-center p-2 ${
+              activeTab === 'forecast' ? 'text-blue-600' : 'text-gray-500'
+            }`}
+            onClick={() => setActiveTab('forecast')}
+          >
+            <Calendar className="w-6 h-6" />
+            <span className="text-xs mt-1">Прогноз</span>
+          </button>
+          <button
+            className={`flex flex-col items-center p-2 ${
+              activeTab === 'guide' ? 'text-blue-600' : 'text-gray-500'
+            }`}
+            onClick={() => setActiveTab('guide')}
+          >
+            <Book className="w-6 h-6" />
+            <span className="text-xs mt-1">Справочник</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;
