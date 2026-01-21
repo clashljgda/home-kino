@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ru" id="html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Рыболовный Справочник</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #222222;
+      --card-bg: #f9f9f9;
+      --header-bg: #1a5f23;
+      --button-bg: #4CAF50;
+      --button-hover: #388E3C;
+    }
+
+    [data-theme="dark"] {
+      --bg: #121212;
+      --text: #e0e0e0;
+      --card-bg: #1e1e1e;
+      --header-bg: #0d3b1a;
+      --button-bg: #388E3C;
+      --button-hover: #2E7D32;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    header {
+      background: var(--header-bg);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    #cityInput {
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 180px;
+    }
+
+    nav button {
+      margin: 0.3rem;
+      padding: 0.5rem 1rem;
+      background: var(--button-bg);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    nav button:hover {
+      background: var(--button-hover);
+    }
+
+    #content {
+      padding: 1rem;
+    }
+
+    .fish-card, .tip-card, .forecast-day {
+      background: var(--card-bg);
+      margin: 1rem 0;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background 0.3s;
+    }
+
+    /* Переключатель темы */
+    .theme-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .theme-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    #map {
+      height: 70vh;
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+    .leaflet-popup-content {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎣 Рыболовный Справочник</h1>
+    <div class="controls">
+      <input type="text" id="cityInput" placeholder="Город (например, Москва)" />
+      <button onclick="loadForecast()">Загрузить прогноз</button>
+      <label class="theme-switch">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <nav>
+      <button onclick="showSection('fish')">Рыбы РФ</button>
+      <button onclick="showSection('forecast')">Прогноз клёва</button>
+      <button onclick="showSection('map')">Карта водоёмов</button>
+      <button onclick="showSection('tips')">Советы</button>
+    </nav>
+  </header>
+
+  <main id="content">
+    <p>Выберите раздел выше.</p>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // === НАСТРОЙКИ ===
+    const API_KEY = 'aa21616f5e84be6f7db6b7d19ebab51b'; // ← ЗАМЕНИ НА СВОЙ!
+    let fishData = [
+      {
+        "name": "Щука",
+        "best_time": "Раннее утро и вечер, особенно в пасмурную погоду",
+        "bait": ["Воблер", "Блесна", "Живец"],
+        "feeding": "Не требует прикормки (хищник)",
+        "season": "Лучше весной и осенью"
+      },
+      {
+        "name": "Карп",
+        "best_time": "День, особенно в тёплую погоду",
+        "bait": ["Кукуруза", "Пеллетс", "Макушка"],
+        "feeding": "Прикормка на основе жмыха, панировочных сухарей, кукурузы",
+        "season": "Июнь–сентябрь"
+      },
+      {
+        "name": "Лещ",
+        "best_time": "Ночь и раннее утро",
+        "bait": ["Червь", "Опарыш", "Перловка"],
+        "feeding": "Густая прикормка с глиной, панировкой, молотыми зёрнами",
+        "season": "Май–октябрь"
+      },
+      {
+        "name": "Окунь",
+        "best_time": "Утро и вечер, особенно после дождя",
+        "bait": ["Мальчик", "Блесна", "Силикон"],
+        "feeding": "Не прикармливают",
+        "season": "Круглый год, кроме глухозимья"
+      }
+    ];
+
+    let map = null;
+    let waterMarkers = [];
+
+    // === Инициализация ===
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      showSection('fish');
+    });
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.getElementById('themeToggle').checked = (savedTheme === 'dark');
+      
+      document.getElementById('themeToggle').addEventListener('change', () => {
+        const newTheme = document.getElementById('themeToggle').checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+    }
+
+    // === РАЗДЕЛЫ ===
+    function showSection(section) {
+      if (section === 'forecast') {
+        loadForecast();
+        return;
+      }
+      if (section === 'map') {
+        showMap();
+        return;
+      }
+
+      const content = document.getElementById('content');
+      content.innerHTML = '';
+
+      if (section === 'fish') {
+        renderFishList();
+      } else if (section === 'tips') {
+        renderTips();
+      }
+    }
+
+    // === РЫБЫ ===
+    function renderFishList() {
+      const content = document.getElementById('content');
+      content.innerHTML = '<h2>Рыбы России</h2>';
+      fishData.forEach(fish => {
+        const div = document.createElement('div');
+        div.className = 'fish-card';
+        div.innerHTML = `
+          <h3>${fish.name}</h3>
+          <p><strong>Лучшее время:</strong> ${fish.best_time}</p>
+          <p><strong>На что ловить:</strong> ${fish.bait.join(', ')}</p>
+          <p><strong>Прикормка:</strong> ${fish.feeding}</p>
+          <p><strong>Сезон:</strong> ${fish.season}</p>
+        `;
+        content.appendChild(div);
+      });
+    }
+
+    // === СОВЕТЫ ===
+    function renderTips() {
+      const tips = [
+        "📌 Узел «Клинч» — идеален для крепления крючка.",
+        "📌 Ловите в тени деревьев летом — рыба прячется от жары.",
+        "📌 Избегайте резких движений — рыба чувствительна к шуму.",
+        "📌 Используйте грузило по течению — оно не должно поднимать муть.",
+        "📌 Ночью эффективна световая приманка для хищников.",
+        "📌 Атмосферное давление — ключевой фактор: стабильное давление = активный клёв."
+      ];
+
+      const content = document.getElementById('content');
+      content.innerHTML = '<h2>Полезные советы</h2>';
+      tips.forEach(tip => {
+        const div = document.createElement('div');
+        div.className = 'tip-card';
+        div.textContent = tip;
+        content.appendChild(div);
+      });
+    }
+
+    // === ПРОГНОЗ КЛЁВА ===
+    async function loadForecast() {
+      const cityInput = document.getElementById('cityInput').value.trim();
+      const city = cityInput || 'Moscow';
+
+      try {
+        const geoRes = await fetch(
+          `https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${API_KEY}`
+        );
+        const geoData = await geoRes.json();
+        
+        if (!geoData || geoData.length === 0) {
+          alert('Город не найден. Попробуйте другой.');
+          return;
+        }
+
+        const { lat, lon } = geoData[0];
+        const weatherRes = await fetch(
+          `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=current,minutely,hourly,alerts&units=metric&appid=${API_KEY}`
+        );
+        const weatherData = await weatherRes.json();
+
+        if (weatherData.daily) {
+          renderForecast(weatherData.daily.slice(0, 14));
+        } else {
+          throw new Error('Нет данных о погоде');
+        }
+      } catch (err) {
+        console.error('Ошибка API:', err);
+        document.getElementById('content').innerHTML = '<p>❌ Не удалось загрузить прогноз. Проверьте API-ключ и интернет.</p>';
+      }
+    }
+
+    function calculateBiteScore(day) {
+      let score = 5;
+      const temp = day.temp.day;
+      if (temp >= 10 && temp <= 22) score += 2;
+      else if (temp < 5 || temp > 28) score -= 2;
+      if (day.pressure >= 1000 && day.pressure <= 1025) score += 1;
+      if (day.rain) score -= Math.min(2, day.rain * 0.5);
+      if (day.snow) score -= Math.min(2, day.snow * 0.5);
+      if (day.clouds < 30 || day.clouds > 70) score -= 0.5;
+      return Math.max(1, Math.min(10, Math.round(score)));
+    }
+
+    function renderForecast(dailyData) {
+      const content = document.getElementById('content');
+      content.innerHTML = '<h2>Прогноз клёва на 14 дней</h2>';
+
+      const now = new Date();
+      dailyData.forEach((day, i) => {
+        const date = new Date(now);
+        date.setDate(now.getDate() + i);
+        const dayStr = date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+
+        const bite = calculateBiteScore(day);
+        const quality = bite > 7 ? 'Отличный' : bite > 5 ? 'Хороший' : 'Слабый';
+
+        const div = document.createElement('div');
+        div.className = 'forecast-day';
+        div.innerHTML = `
+          <strong>${dayStr}</strong><br>
+          🌡️ ${Math.round(day.temp.day)}°C | 💧 ${day.humidity}% | ☁️ ${day.clouds}%<br>
+          Клёв: <strong>${quality}</strong> (${bite}/10)
+        `;
+        content.appendChild(div);
+      });
+    }
+
+    // === КАРТА ВОДОЁМОВ ===
+    async function loadWaterBodies(lat = 55.75, lon = 37.62, radiusKm = 50) {
+      waterMarkers.forEach(marker => marker.remove());
+      waterMarkers = [];
+      const radiusMeters = radiusKm * 1000;
+
+      const query = `
+        [out:json];
+        (
+          node["natural"="water"](around:${radiusMeters},${lat},${lon});
+          way["natural"="water"](around:${radiusMeters},${lat},${lon});
+          relation["natural"="water"](around:${radiusMeters},${lat},${lon});
+          node["water"="lake"](around:${radiusMeters},${lat},${lon});
+          node["water"="river"](around:${radiusMeters},${lat},${lon});
+          node["water"="pond"](around:${radiusMeters},${lat},${lon});
+        );
+        out center;
+      `;
+
+      const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+      try {
+        const response = await fetch(overpassUrl);
+        const data = await response.json();
+
+        data.elements.forEach(el => {
+          let name = el.tags?.name || el.tags?.["name:ru"] || "Без названия";
+          let lat, lon;
+
+          if (el.type === "node") {
+            lat = el.lat;
+            lon = el.lon;
+          } else if ((el.type === "way" || el.type === "relation") && el.center) {
+            lat = el.center.lat;
+            lon = el.center.lon;
+          } else return;
+
+          const marker = L.marker([lat, lon]).addTo(map)
+            .bindPopup(`<b>${name}</b><br><small>Водоём</small>`);
+          waterMarkers.push(marker);
+        });
+
+        if (waterMarkers.length === 0) {
+          alert("В этом районе не найдено водоёмов в базе OpenStreetMap.");
+        }
+      } catch (err) {
+        console.error("Ошибка загрузки водоёмов:", err);
+        alert("Не удалось загрузить карту. Проверьте интернет.");
+      }
+    }
+
+    function showMap() {
+      const content = document.getElementById('content');
+      content.innerHTML = '<div id="map"></div>';
+
+      if (!map) {
+        map = L.map('map').setView([55.75, 37.62], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        map.on('click', function(e) {
+          const { lat, lng } = e.latlng;
+          loadWaterBodies(lat, lng, 30);
+        });
+      }
+
+      loadWaterBodies(55.75, 37.62, 30);
+    }
+  </script>
+</body>
+</html>
