@@ -527,6 +527,20 @@ body {
     background: #c0392b;
 }
 
+.info-note {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.info-note p {
+    margin: 0;
+    color: #856404;
+}
+
 .current-listing {
     display: flex;
     justify-content: space-between;
@@ -574,79 +588,123 @@ body {
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+    .container {
+        max-width: 95%;
+    }
+
     .hero-title {
         font-size: 52px;
     }
-    
+
     .listings-grid {
         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         gap: 20px;
     }
 }
 
-@media (max-width: 768px) {
-    .hero {
-        padding: 60px 0 50px;
+@media (max-width: 1024px) {
+    .container {
+        max-width: 95%;
     }
-    
+
     .hero-title {
-        font-size: 36px;
-        line-height: 1.2;
+        font-size: 48px;
     }
-    
-    .hero-subtitle {
-        font-size: 18px;
-    }
-    
-    .header {
-        flex-direction: column;
-        gap: 20px;
-        padding: 20px 0;
-    }
-    
-    .nav {
-        gap: 20px;
-    }
-    
-    .listings-section {
-        padding: 40px 0;
-    }
-    
+
     .listings-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 20px;
     }
-    
+}
+
+@media (max-width: 768px) {
+    .container {
+        max-width: 95%;
+    }
+
+    .hero {
+        padding: 60px 0 50px;
+    }
+
+    .hero-title {
+        font-size: 36px;
+        line-height: 1.2;
+    }
+
+    .hero-subtitle {
+        font-size: 18px;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px 0;
+        text-align: center;
+    }
+
+    .nav {
+        gap: 15px;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .admin-btn {
+        max-width: 250px;
+        width: 100%;
+    }
+
+    .listings-section {
+        padding: 40px 0;
+    }
+
+    .listings-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px;
+    }
+
     .filters {
         flex-direction: column;
         align-items: center;
         gap: 10px;
     }
-    
+
     .filter-select {
         width: 100%;
         max-width: 300px;
     }
-    
+
     .admin-panel {
         width: 100%;
         right: -100%;
         padding: 20px;
     }
-    
+
     .listing-form {
         gap: 12px;
     }
-    
+
     .listing-form input,
     .listing-form select {
-        padding: 10px;
+        padding: 12px;
     }
-    
+
+    .listing-form button {
+        padding: 14px;
+    }
+
+    .listing-card {
+        padding: 15px;
+    }
+
+    #mainImage {
+        height: 300px;
+    }
+
     .modal-content {
-        margin: 20% auto;
-        width: 95%;
+        margin: 15% auto;
+        width: 90%;
+        max-width: 90%;
     }
 }
 
@@ -654,40 +712,41 @@ body {
     .container {
         padding: 0 15px;
     }
-    
+
+    .hero {
+        padding: 40px 0 30px;
+    }
+
     .hero-title {
         font-size: 28px;
     }
-    
+
     .hero-subtitle {
         font-size: 16px;
     }
-    
+
     .logo {
-        font-size: 20px;
+        font-size: 22px;
     }
-    
-    .nav-link {
-        font-size: 16px;
-    }
-    
+
     .admin-btn {
-        padding: 6px 15px;
+        padding: 10px 15px;
         font-size: 14px;
     }
-    
+
     .listings-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
     }
-    
+
     .listing-card {
-        padding: 15px;
+        padding: 12px;
     }
-    
-    .listing-image {
+
+    .listing-image img {
         height: 250px;
     }
-    
+
     .admin-panel {
         position: fixed;
         top: 0;
@@ -697,19 +756,56 @@ body {
         z-index: 1001;
         right: -100%;
     }
-    
+
     .admin-header {
         margin-bottom: 20px;
     }
-    
+
     .listing-form {
-        gap: 10px;
+        gap: 12px;
     }
-    
+
+    .listing-form input,
+    .listing-form select,
+    .listing-form button {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    #mainImage {
+        height: 250px;
+    }
+
+    .listing-modal {
+        width: 95%;
+        margin: 2.5%;
+    }
+
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+        max-width: 95%;
+    }
+}
+
+@media (max-width: 360px) {
+    .hero-title {
+        font-size: 24px;
+    }
+
+    .listing-image img {
+        height: 200px;
+    }
+
+    #mainImage {
+        height: 200px;
+    }
+
     .listing-form input,
     .listing-form select,
     .listing-form button {
         font-size: 14px;
+        padding: 10px;
     }
 }
 
