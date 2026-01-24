@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SARTORIAL | Кураторская секонд-хенд мода</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">SARTORIAL</div>
+            <nav class="nav">
+                <button class="admin-btn" onclick="toggleLoginModal()">Вход для админов</button>
+            </nav>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1 class="hero-title">SARTORIAL MOOD</h1>
+            <p class="hero-subtitle">Открой для себя вещи от брендов</p>
+        </section>
+
+        <!-- Listings Grid -->
+        <section class="listings-section">
+            <div class="filters">
+                <select class="filter-select">
+                    <option>Все категории</option>
+                    <option>Верхняя одежда</option>
+                    <option>Блузки и рубашки</option>
+                    <option>Платья</option>
+                    <option>Юбки</option>
+                    <option>Брюки</option>
+                    <option>Обувь</option>
+                    <option>Аксессуары</option>
+                </select>
+            </div>
+            
+            <div class="listings-grid" id="listingsGrid">
+                <!-- Listings will be dynamically added here -->
+            </div>
+        </section>
+
+        <!-- Login Modal -->
+        <div class="modal" id="loginModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Вход для администратора</h2>
+                    <span class="close" onclick="closeLoginModal()">&times;</span>
+                </div>
+                <form id="loginForm">
+                    <input type="text" id="adminUsername" placeholder="Логин" required>
+                    <input type="password" id="adminPassword" placeholder="Пароль" required>
+                    <button type="submit">Войти</button>
+                    <div id="loginError" class="error-message"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Listing Detail Modal -->
+        <div class="modal" id="listingModal">
+            <div class="modal-content listing-modal">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Детали товара</h2>
+                    <span class="close" onclick="closeListingModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-images">
+                        <img id="mainImage" src="" alt="Товар" />
+                        <div class="thumbnail-container">
+                            <div id="thumbnails"></div>
+                        </div>
+                    </div>
+                    <div class="modal-info">
+                        <h3 id="modalName"></h3>
+                        <p id="modalDescription"></p>
+                        <div class="modal-details">
+                            <div class="detail-item">
+                                <span class="label">Категория:</span>
+                                <span id="modalCategory"></span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Цена:</span>
+                                <span id="modalPrice"></span>
+                            </div>
+                        </div>
+                        <button class="purchase-btn" id="modalPurchaseBtn">Связаться с продавцом</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel (Hidden by default) -->
+        <div class="admin-panel" id="adminPanel">
+            <div class="admin-header">
+                <h2>Панель управления</h2>
+                <button class="close-btn" onclick="logout()">Выйти</button>
+            </div>
+
+            <div class="admin-controls">
+                <h3>Создать новое объявление</h3>
+                <form class="listing-form" id="listingForm">
+                    <input type="text" name="itemName" placeholder="Название товара" required>
+                    <input type="text" name="itemDesc" placeholder="Описание" required>
+                    <input type="number" name="itemPrice" placeholder="Цена" step="0.01" required>
+                    <select name="itemCategory" required>
+                        <option value="">Категория</option>
+                        <option value="Верхняя одежда">Верхняя одежда</option>
+                        <option value="Блузки и рубашки">Блузки и рубашки</option>
+                        <option value="Платья">Платья</option>
+                        <option value="Юбки">Юбки</option>
+                        <option value="Брюки">Брюки</option>
+                        <option value="Джинсы">Джинсы</option>
+                        <option value="Свитеры">Свитеры</option>
+                        <option value="Футболки и топы">Футболки и топы</option>
+                        <option value="Костюмы">Костюмы</option>
+                        <option value="Спортивная одежда">Спортивная одежда</option>
+                        <option value="Обувь">Обувь</option>
+                        <option value="Сумки">Сумки</option>
+                        <option value="Головные уборы">Головные уборы</option>
+                        <option value="Шарфы">Шарфы</option>
+                        <option value="Аксессуары">Аксессуары</option>
+                    </select>
+                    <input type="text" name="itemSize" placeholder="Размер (например, M, 42, 38.5)" required>
+                    <select name="itemCondition" required>
+                        <option value="">Состояние</option>
+                        <option value="Новое">Новое</option>
+                        <option value="Отличное">Отличное</option>
+                        <option value="Хорошее">Хорошее</option>
+                        <option value="Удовлетворительное">Удовлетворительное</option>
+                    </select>
+                    <input type="text" name="sellerId" placeholder="Telegram ID продавца" required>
+                    <label for="itemImages">Загрузить до 10 фотографий:</label>
+                    <input type="file" name="itemImages" id="itemImages" accept="image/*" multiple>
+                    <div id="imagePreviews" class="image-previews"></div>
+                    <button type="submit">Добавить объявление</button>
+                </form>
+
+                <h3 style="margin-top: 30px;">Текущие объявления</h3>
+                <div id="currentListings"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
