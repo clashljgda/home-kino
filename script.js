@@ -1,5 +1,5 @@
-// Sample listings data
-let listings = [
+// Load listings from localStorage or initialize with sample data
+let listings = JSON.parse(localStorage.getItem('listings')) || [
     {
         id: 1,
         name: "Винтажное пальто Balenciaga",
@@ -93,14 +93,19 @@ const ADMIN_CREDENTIALS = {
     password: 'favicon'
 };
 
+// Save listings to localStorage
+function saveListings() {
+    localStorage.setItem('listings', JSON.stringify(listings));
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
     // Add fade-in animation to hero section
     document.querySelector('.hero-title').classList.add('fade-in');
     document.querySelector('.hero-subtitle').classList.add('fade-in');
-    
+
     renderListings(listings);
-    
+
     // Add scroll animation
     window.addEventListener('scroll', animateOnScroll);
 });
@@ -125,7 +130,7 @@ function renderListings(listingsArray) {
             </div>
             <h3 class="listing-name">${listing.name}</h3>
             <p class="listing-description">${listing.description}</p>
-            <div class="listing-price">${listing.price.toFixed(2)} $</div>
+            <div class="listing-price">${listing.price.toFixed(2)} ₽</div>
             <button class="purchase-btn" onclick="openListingDetails(${listing.id})">Подробнее</button>
         `;
 
@@ -215,6 +220,10 @@ function renderCurrentListings() {
 function deleteListing(id) {
     if (confirm('Вы уверены, что хотите удалить это объявление?')) {
         listings = listings.filter(listing => listing.id !== id);
+
+        // Save to localStorage
+        saveListings();
+
         renderListings(listings);
         renderCurrentListings();
     }
@@ -230,44 +239,72 @@ document.getElementById('listingForm').addEventListener('submit', function(e) {
     // Get the selected files
     const imageFiles = document.getElementById('itemImages').files;
 
-    // Process images (for demo purposes, we'll use placeholders)
+    // Process images
     const images = [];
+
+    // Convert image files to data URLs for storage
+    const promises = [];
+
     for (let i = 0; i < imageFiles.length && i < 10; i++) {
-        // In a real implementation, you would upload the image and get a URL
-        // For now, we'll use a placeholder SVG
-        const placeholderSvg = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'%3E%3Crect width='300' height='400' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='14' fill='%23999' text-anchor='middle' dominant-baseline='middle'%3EUploaded Image ${i+1}%3C/text%3E%3C/svg%3E`;
-        images.push(placeholderSvg);
+        const file = imageFiles[i];
+        if (file.type.match('image.*')) {
+            const promise = new Promise((resolve) => {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    images.push(e.target.result);
+                    resolve();
+                };
+
+                reader.onerror = function() {
+                    // Fallback to placeholder if image fails to load
+                    const placeholderSvg = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'%3E%3Crect width='300' height='400' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='14' fill='%23999' text-anchor='middle' dominant-baseline='middle'%3EImage Upload Error%3C/text%3E%3C/svg%3E`;
+                    images.push(placeholderSvg);
+                    resolve();
+                };
+
+                reader.readAsDataURL(file);
+            });
+
+            promises.push(promise);
+        }
     }
 
-    const newListing = {
-        id: Date.now(),
-        name: formData.get('itemName'),
-        description: formData.get('itemDesc'),
-        price: parseFloat(formData.get('itemPrice')),
-        category: formData.get('itemCategory'),
-        size: formData.get('itemSize'),
-        condition: formData.get('itemCondition'),
-        sellerId: formData.get('sellerId'),
-        images: images
-    };
+    // Wait for all images to be processed
+    Promise.all(promises).then(() => {
+        const newListing = {
+            id: Date.now(),
+            name: formData.get('itemName'),
+            description: formData.get('itemDesc'),
+            price: parseFloat(formData.get('itemPrice')),
+            category: formData.get('itemCategory'),
+            size: formData.get('itemSize'),
+            condition: formData.get('itemCondition'),
+            sellerId: formData.get('sellerId'),
+            images: images
+        };
 
-    // Add to listings
-    listings.push(newListing);
+        // Add to listings
+        listings.push(newListing);
 
-    // Re-render listings with animation
-    renderListings(listings);
+        // Save to localStorage
+        saveListings();
 
-    // Update current listings in admin panel
-    renderCurrentListings();
+        // Re-render listings with animation
+        renderListings(listings);
 
-    // Reset form
-    this.reset();
-    document.getElementById('imagePreviews').innerHTML = '';
+        // Update current listings in admin panel
+        renderCurrentListings();
 
-    // Show success animation
-    showSuccessAnimation();
+        // Reset form
+        this.reset();
+        document.getElementById('imagePreviews').innerHTML = '';
 
-    alert('Объявление успешно добавлено!');
+        // Show success animation
+        showSuccessAnimation();
+
+        alert('Объявление успешно добавлено!');
+    });
 });
 
 // Show success animation
@@ -311,7 +348,7 @@ function openListingDetails(listingId) {
     document.getElementById('modalName').textContent = listing.name;
     document.getElementById('modalDescription').textContent = listing.description;
     document.getElementById('modalCategory').textContent = listing.category;
-    document.getElementById('modalPrice').textContent = `${listing.price.toFixed(2)} $`;
+    document.getElementById('modalPrice').textContent = `${listing.price.toFixed(2)} ₽`;
 
     // Add size and condition info
     const modalInfoDiv = document.querySelector('.modal-info');
